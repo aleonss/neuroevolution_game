@@ -29,7 +29,7 @@ end
 # unset irrelevant variables
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/home/alvaro/2018/NeuralNetworks/Tarea 3/venv"
+set -gx VIRTUAL_ENV "/media/alvaro/SSD1/2018/NeuralNetworks/Tarea3/venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH

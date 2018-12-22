@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 
 class SigmoidNeuron:
@@ -16,6 +17,12 @@ class SigmoidNeuron:
 		self.weights = w
 		self.bias = random.uniform(-2.0, 2.0)
 
+	def randomnize(self):
+		w = []
+		for ow in self.weights:
+			w.append(random.uniform(-2.0, 2.0))
+		self.weights = w
+		self.bias = random.uniform(-2.0, 2.0)
 
 	def feed(self,x):
 		summ = 0.0
@@ -156,6 +163,46 @@ class NeuralNetwork:
 			l.upgrade_wb(deltam[i], input, learn_rate)
 			input = outputs[i]
 
+
+	def get_num_neurons(self):
+		n_neurons = 0
+		for l in self.layers:
+			for n in l.neurons:
+				n_neurons+=1
+		return n_neurons
+
+
+	def neuron_at(self,index):
+		i = 0
+		for l in self.layers:
+			for n in l.neurons:
+				if(index==i):
+					return n
+				i+=1
+
+	def cross_over(self, nn_gf):
+		n_neurons = self.get_num_neurons()
+		k = np.random.randint(0, n_neurons)
+
+		cnt = 0
+		new_nn = copy.deepcopy(self)
+
+		for l in new_nn.layers:
+			for n in l.neurons:
+				if(cnt>k):
+					n_gf= nn_gf.neuron_at(cnt)
+					n.weights = n_gf.weights
+					n.bias = n_gf.bias
+				cnt+=1
+		return new_nn
+
+
+	def mutate(self, mutation_rate):
+		for l in self.layers:
+			for n in l.neurons:
+				if (np.random.rand() < mutation_rate):
+					n.randomnize()
+		return self
 
 	def get_weight(self):
 		res = []

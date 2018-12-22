@@ -1,6 +1,5 @@
 import numpy as np
 import itertools
-import string
 
 
 class individual:
@@ -126,7 +125,7 @@ class population:
         offspring = []
         if(domain_type=="discrete"):
             for c in children:
-                offspring.append(c.mutate_discrete(mutation_rate))
+                offspring.append(c.mutate(mutation_rate))
         elif(domain_type=="continuous"):
             for c in children:
                 offspring.append(c.mutate_continuous(mutation_rate))
