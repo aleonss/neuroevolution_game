@@ -1,4 +1,3 @@
- 
- 
- 
-https://github.com/grantjenks/free-python-games.git
+# Tarea 3
+Neuroevolucion para el clon de flapy bird: 
+https://github.com/sourabhv/FlapPyBird
