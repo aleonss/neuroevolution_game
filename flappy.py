@@ -10,7 +10,79 @@ import numpy as np
 import copy
 import pickle
 
-#from tarea3 import *
+
+
+scores = []
+
+# Neuroevolution : hiperparametros
+selection_ratio=0.5
+mutation_rate=0.1
+top_notch = 2
+pop_size = 15
+nn_layout = [6,10,8,6,1,]
+
+# Neuroevolution : Funciones
+def nn_selection(players,selection_ratio):
+	mating_pool = []
+	n_parent = int(1 - pop_size * selection_ratio)
+	fittest_index = np.argsort(scores)[n_parent:][::-1]
+
+	for index in fittest_index:
+		mating_pool.append(players[index])
+	return mating_pool
+
+def nn_mutation(children, mutation_rate):
+	offspring = []
+	for child in children:
+		offspring.append(child.mutate(mutation_rate))
+	return offspring
+
+def nn_cross_over(mating_pool):
+	children = []
+	for comb in list(combinations(mating_pool, 2)):
+		children.append(comb[0].cross_over(comb[1]))
+
+	while (children.__len__() < pop_size):
+		rand_parent0 = mating_pool[np.random.randint(0, mating_pool.__len__())]
+		rand_parent1 = mating_pool[np.random.randint(0, mating_pool.__len__())]
+		children.append(rand_parent0.cross_over(rand_parent1))
+
+	return children[:pop_size]
+
+
+
+# feed neeural network
+def nn_flap(nn, f_counter, playery, playerVelY, upperPipes, lowerPipes):
+	input_nn = [playery, playerVelY,]
+	for uPipe, lPipe in zip(upperPipes, lowerPipes): 
+		input_nn.append(uPipe['x'])
+		input_nn.append(lPipe['y'])
+
+	flap = nn.feed(input_nn)[0]
+	#print(input_nn,"->",flap)
+	return flap > 0.5
+
+# Funciones utiles
+def save(players,highscore):
+	with open('saves/nn_data.pkl', 'wb') as output:
+		pickle.dump(players, output, pickle.HIGHEST_PROTOCOL)
+	with open('saves/highscore.pkl', 'wb') as output:
+		pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
+	print("saved! ",highscore)
+
+def switch_fps(FPS,):
+	if FPS==30:
+		FPS= 6000
+	else:
+		FPS= 30
+	return FPS
+
+
+
+
+
+
+# Parametros del juego
 
 SCREENWIDTH  = 288*1
 SCREENHEIGHT = 512*1
@@ -65,48 +137,6 @@ except NameError:
 
 
 
-
-
-
-
-
-
-def nn_flap(nn, f_counter, playery, playerVelY, upperPipes, lowerPipes):
-	#+2
-	input_nn = [playery, playerVelY,]
-	for uPipe, lPipe in zip(upperPipes, lowerPipes): 
-		input_nn.append(uPipe['x'])
-		#input_nn.append(-uPipe['y'])
-		input_nn.append(lPipe['y'])
-
-	flap = nn.feed(input_nn)[0]
-	#print(input_nn,"->",flap)
-	return flap > 0.5
-
-def save(players,highscore):
-	with open('saves/nn_data.pkl', 'wb') as output:
-		pickle.dump(players, output, pickle.HIGHEST_PROTOCOL)
-	with open('saves/highscore.pkl', 'wb') as output:
-		pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
-	print("saved! ",highscore)
-
-
-
-
-def switch_fps(FPS,):
-	if FPS==30:
-		FPS= 6000
-	else:
-		FPS= 30
-	return FPS
-
-
-
-
-
-
-
-
 def main(demo,load_players,save_players):
 	global SCREEN, FPSCLOCK
 	pygame.init()
@@ -148,11 +178,8 @@ def main(demo,load_players,save_players):
 	pop_cnt = 0
 	players = []
 
-
 	if(demo<1):
 		FPS = 6000
-
-
 	if(load_players):
 		#for i in range(0,pop_size):
 		with open('saves/nn_data.pkl', 'rb') as input:
@@ -167,7 +194,6 @@ def main(demo,load_players,save_players):
 			nn = NeuralNetwork(layers)
 			players.append(nn)
 			scores.append(0)
-
 
 	while True:
 		# select random background sprites
@@ -215,15 +241,18 @@ def main(demo,load_players,save_players):
 		
 		iplayer+=1
 		if(iplayer==pop_size):
-			#print(scores)
-			mating_pool = fselection(players, selection_ratio)
 
-			bestest = mating_pool[:2]
+			fittest_index = np.argsort(scores)[pop_size-1]
+			print(pop_cnt, ",",scores[fittest_index])
 
-			children = fcross_over(mating_pool)
-			players = fmutation(children, mutation_rate)
+			mating_pool = nn_selection(players, selection_ratio)
 
-			players = bestest[:2] + children[:(pop_size-2)]
+			bestest = mating_pool[:top_notch]
+
+			children = nn_cross_over(mating_pool)
+			players = nn_mutation(children, mutation_rate)
+
+			players = bestest[:top_notch] + children[:(pop_size-top_notch)]
 			iplayer= 0
 			pop_cnt+=1
 
@@ -582,10 +611,13 @@ def mainGame(movementInfo, FPS, players, iplayer, highscore, pop_cnt):
 
 
 if __name__ == '__main__':
-	demo= -1
+	demo= 5
 	load_players= True
-	save_players= True
-	#highscore=5000
-	#with open('saves/highscore.pkl', 'wb') as output:
-	#	pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
+	save_players= False
+
 	main(demo,load_players,save_players)
+
+
+#highscore=5000
+#with open('saves/highscore.pkl', 'wb') as output:
+#	pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import copy
 from itertools import *
 
+# Neural Network | Tarea 1
 
 class SigmoidNeuron:
 
@@ -242,103 +243,3 @@ def make_layers(nneurons):
 		layers.append(NeuronLayer(nneurons[i], nneurons[i+1]))
 	return layers
 
-
-def plot_nn_2D(nn, n_input, x, title):
-	fig, ax = plt.subplots()
-	color = ['red', 'blue']
-
-	for j in range(0, n_input):
-		res, outputs = nn.forward_feeding(x[j])
-		c = res[0] > 0.5
-		xx = x[j][0]
-		yy = x[j][1]
-		scale = 20
-		ax.scatter(xx, yy, c=color[c], s=scale, alpha=0.5, edgecolors='none')
-
-	plt.title(title)
-	plt.show()
-
-
-
-
-def binary_classifiers(real,pred):
-	tp = 0.0
-	fn = 0.0
-	fp = 0.0
-	tn = 0.0
-	for r,p in zip(real,pred):
-		if(r and p):
-			tp+=1
-		elif(r and (not p)):
-			fn+=1
-		elif((not r) and p):
-			fp+=1
-		elif((not r) and (not p)):
-			tn+=1
-	return tp,fn,fp,tn
-
-
-def get_performance(real, pred):
-	tp, fn, fp, tn = binary_classifiers(real,pred)
-	accuracy = (tp + tn) / (tp + tn + fp + fn)
-
-	if(tp==0):
-		precision = 0
-		recall = 0
-	else:
-		precision = tp / (tp + fp)
-		recall = tp / (tp + fn)
-	print("Performance::")
-	print("\tAccuracy: ", accuracy)
-	print("\tPrecision:", precision )
-	print("\tRecall:   ", recall ,"\n" )
-	return accuracy,precision,recall
-
-
-
-
-
-
-
-selection_ratio=0.5
-mutation_rate=0.1
-
-pop_size = 15
-nn_layout = [6,10,8,6,1,]
-
-scores = []
-
-
-def fselection(players,selection_ratio):
-	mating_pool = []
-	pop_fitness = scores
-	n_parent = int(1 - pop_size * selection_ratio)
-	fittest_index = np.argsort(pop_fitness)[n_parent:][::-1]
-
-	for index in fittest_index:
-		mating_pool.append(players[index])
-	return mating_pool
-
-
-def fmutation(children, mutation_rate):
-	offspring = []
-	for child in children:
-		offspring.append(child.mutate(mutation_rate))
-	return offspring
-
-
-
-def fcross_over(mating_pool):
-	children = []
-	for comb in list(combinations(mating_pool, 2)):
-		children.append(comb[0].cross_over(comb[1]))
-		#children.append(nn_cross_over(comb[0],comb[1]))
-		# print(comb[0].cross_over(comb[1]).get_ans())
-
-	while (children.__len__() < pop_size):
-		rand_parent0 = mating_pool[np.random.randint(0, mating_pool.__len__())]
-		rand_parent1 = mating_pool[np.random.randint(0, mating_pool.__len__())]
-		#children.append(nn_cross_over(rand_parent0,rand_parent1))
-		children.append(rand_parent0.cross_over(rand_parent1))
-
-	return children[:pop_size]
