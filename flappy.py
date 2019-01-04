@@ -5,7 +5,7 @@ import sys
 import pygame
 from pygame.locals import *
 
-from neural_network import NeuralNetwork, make_layers
+from neural_network import *
 import numpy as np
 import copy
 import pickle
@@ -57,57 +57,54 @@ PIPES_LIST = (
 
 
 
-
-
-selection_ratio=0.3
-mutation_rate=0.2
-
-pop_size = 15
-nn_layout = [6,10,8,6,1,]
-
-scores = []
-
-
-def fselection(players,selection_ratio):
-	mating_pool = []
-	pop_fitness = scores
-	n_parent = int(1 - pop_size * selection_ratio)
-	fittest_index = np.argsort(pop_fitness)[n_parent:][::-1]
-
-	for index in fittest_index:
-		mating_pool.append(players[index])
-	return mating_pool
-
-
-def fmutation(children, mutation_rate):
-	offspring = []
-	for child in children:
-		offspring.append(child.mutate(mutation_rate))
-	return offspring
-
-
-
-def fcross_over(mating_pool):
-	children = []
-	for comb in list(combinations(mating_pool, 2)):
-		children.append(comb[0].cross_over(comb[1]))
-		#children.append(nn_cross_over(comb[0],comb[1]))
-		# print(comb[0].cross_over(comb[1]).get_ans())
-
-	while (children.__len__() < pop_size):
-		rand_parent0 = mating_pool[np.random.randint(0, mating_pool.__len__())]
-		rand_parent1 = mating_pool[np.random.randint(0, mating_pool.__len__())]
-		#children.append(nn_cross_over(rand_parent0,rand_parent1))
-		children.append(rand_parent0.cross_over(rand_parent1))
-
-	return children[:pop_size]
-
-
-
 try:
 	xrange
 except NameError:
 	xrange = range
+
+
+
+
+
+
+
+
+
+
+def nn_flap(nn, f_counter, playery, playerVelY, upperPipes, lowerPipes):
+	#+2
+	input_nn = [playery, playerVelY,]
+	for uPipe, lPipe in zip(upperPipes, lowerPipes): 
+		input_nn.append(uPipe['x'])
+		#input_nn.append(-uPipe['y'])
+		input_nn.append(lPipe['y'])
+
+	flap = nn.feed(input_nn)[0]
+	#print(input_nn,"->",flap)
+	return flap > 0.5
+
+def save(players,highscore):
+	with open('saves/nn_data.pkl', 'wb') as output:
+		pickle.dump(players, output, pickle.HIGHEST_PROTOCOL)
+	with open('saves/highscore.pkl', 'wb') as output:
+		pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
+	print("saved! ",highscore)
+
+
+
+
+def switch_fps(FPS,):
+	if FPS==30:
+		FPS= 6000
+	else:
+		FPS= 30
+	return FPS
+
+
+
+
+
+
 
 
 def main(demo,load_players,save_players):
@@ -115,7 +112,7 @@ def main(demo,load_players,save_players):
 	pygame.init()
 	FPSCLOCK = pygame.time.Clock()
 	SCREEN = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
-	pygame.display.set_caption('ay')
+	pygame.display.set_caption('tarea3')
 
 	# numbers sprites for score display
 	IMAGES['numbers'] = (
@@ -144,20 +141,17 @@ def main(demo,load_players,save_players):
 	else:
 		soundExt = '.ogg'
 
-	#SOUNDS['die']    = pygame.mixer.Sound('assets/audio/die' + soundExt)
-	#SOUNDS['hit']    = pygame.mixer.Sound('assets/audio/hit' + soundExt)
-	#SOUNDS['point']  = pygame.mixer.Sound('assets/audio/point' + soundExt)
-	#SOUNDS['swoosh'] = pygame.mixer.Sound('assets/audio/swoosh' + soundExt)
-	#SOUNDS['wing']   = pygame.mixer.Sound('assets/audio/wing' + soundExt)
-
-	#global vars?
-	FPS = 6000
-
+	#global vars
+	FPS = 30
 	iplayer = 0
 	highscore = 0
 	pop_cnt = 0
-
 	players = []
+
+
+	if(demo<1):
+		FPS = 6000
+
 
 	if(load_players):
 		#for i in range(0,pop_size):
@@ -213,13 +207,11 @@ def main(demo,load_players,save_players):
 		crashInfo = mainGame(movementInfo,FPS,players, iplayer,highscore,pop_cnt)
 		showGameOverScreen(crashInfo)
 
+		#update highscore
 		if(scores[iplayer]>highscore):
 			highscore= scores[iplayer]
 			if(save_players):
-				with open('saves/nn_data.pkl', 'wb') as output:
-					pickle.dump(players, output, pickle.HIGHEST_PROTOCOL)
-				with open('saves/highscore.pkl', 'wb') as output:
-					pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
+				save(players,highscore)
 		
 		iplayer+=1
 		if(iplayer==pop_size):
@@ -272,35 +264,7 @@ def showWelcomeAnimation():
 			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
 				pygame.quit()
 				sys.exit()
-		'''
-			if event.type == KEYDOWN and (event.key == K_SPACE ):
-				# make first flap sound and return values for mainGame
-				#SOUNDS['wing'].play()
-				return {
-					'playery': playery + playerShmVals['val'],
-					'basex': basex,
-					'playerIndexGen': playerIndexGen,
-				}
-		
-		# adjust playery, playerIndex, basex
-		if (loopIter + 1) % 5 == 0:
-			playerIndex = next(playerIndexGen)
-		loopIter = (loopIter + 1) % 30
-		basex = -((-basex + 4) % baseShift)
-		playerShm(playerShmVals)
 
-		# draw sprites
-		SCREEN.blit(IMAGES['background'], (0,0))
-		SCREEN.blit(IMAGES['player'][playerIndex],
-					(playerx, playery + playerShmVals['val']))
-		SCREEN.blit(IMAGES['message'], (messagex, messagey))
-		SCREEN.blit(IMAGES['base'], (basex, BASEY))
-
-		pygame.display.update()
-		FPSCLOCK.tick(FPS)
-		'''
-		#autoplay
-		#SOUNDS['wing'].play()
 		return {
 			'playery': playery + playerShmVals['val'],
 			'basex': basex,
@@ -326,50 +290,6 @@ def showGameOverScreen(crashInfo):
 
 	#autoplay
 	return
-	'''
-	# play hit and die sounds
-	#SOUNDS['hit'].play()
-	#if not crashInfo['groundCrash']:
-		#SOUNDS['die'].play()
-
-	while True:
-		for event in pygame.event.get():
-			if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-				pygame.quit()
-				sys.exit()
-			if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
-				if playery + playerHeight >= BASEY - 1:
-					return
-
-		# player y shift
-		if playery + playerHeight < BASEY - 1:
-			playery += min(playerVelY, BASEY - playery - playerHeight)
-
-		# player velocity change
-		if playerVelY < 15:
-			playerVelY += playerAccY
-
-		# rotate only when it's a pipe crash
-		if not crashInfo['groundCrash']:
-			if playerRot > -90:
-				playerRot -= playerVelRot
-
-		# draw sprites
-		SCREEN.blit(IMAGES['background'], (0,0))
-
-		for uPipe, lPipe in zip(upperPipes, lowerPipes):
-			SCREEN.blit(IMAGES['pipe'][0], (uPipe['x'], uPipe['y']))
-			SCREEN.blit(IMAGES['pipe'][1], (lPipe['x'], lPipe['y']))
-
-		SCREEN.blit(IMAGES['base'], (basex, BASEY))
-		showScore(score)
-
-		playerSurface = pygame.transform.rotate(IMAGES['player'][1], playerRot)
-		SCREEN.blit(playerSurface, (playerx,playery))
-	
-		FPSCLOCK.tick(FPS)
-		pygame.display.update()
-	'''
 
 
 def playerShm(playerShm):
@@ -395,6 +315,8 @@ def getRandomPipe():
 		{'x': pipeX, 'y': gapY - pipeHeight},  # upper pipe
 		{'x': pipeX, 'y': gapY + PIPEGAPSIZE}, # lower pipe
 	]
+
+
 
 
 def showScore(score):
@@ -436,6 +358,9 @@ def showPlayerId(pop_cnt, iplayer):
 	for digit in popDigits:
 		SCREEN.blit(IMAGES['numbers'][digit], (offset, 50))
 		offset += IMAGES['numbers'][digit].get_width()
+
+
+
 
 
 
@@ -506,55 +431,6 @@ def getHitmask(image):
 
 
 
-'''
-	#flap = random.randint(0,100)<10 
-	#print(upperPipes.__len__())
-	#pipeH = IMAGES['pipe'][0].get_height()
-	#print(upperPipes.__len__())
-
-
-x = 57
-y = [0,380] = [techo,suelo]
-upperPipes.__len__() = [2,3]
-'''
-
-
-
-def nn_flap(nn, f_counter, playery, playerVelY, upperPipes, lowerPipes):
-	#+2
-	input_nn = [playery, playerVelY,]
-
-	#+3*3
-	for uPipe, lPipe in zip(upperPipes, lowerPipes): 
-		#print(uPipe['x'])
-		#print(lPipe['x'], lPipe['y'])
-		input_nn.append(uPipe['x'])
-		#input_nn.append(-uPipe['y'])
-		input_nn.append(lPipe['y'])
-
-	flap = nn.feed(input_nn)[0]
-	#print(input_nn,"->",flap)
-
-
-	return flap > 0.5
-
-def save(players,highscore):
-	with open('saves/nn_data.pkl', 'wb') as output:
-		pickle.dump(players, output, pickle.HIGHEST_PROTOCOL)
-	with open('saves/highscore.pkl', 'wb') as output:
-		pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
-
-def load(players):
-	print("asd")
-
-
-def switch_fps(FPS,):
-	if FPS==30:
-		FPS= 6000
-	else:
-		FPS= 30
-	return FPS
-
 def mainGame(movementInfo, FPS, players, iplayer, highscore, pop_cnt):
 	score = playerIndex = loopIter = 0
 	playerIndexGen = movementInfo['playerIndexGen']
@@ -607,17 +483,7 @@ def mainGame(movementInfo, FPS, players, iplayer, highscore, pop_cnt):
 					FPS= switch_fps(FPS,)
 				elif(event.key == K_s):
 					save(players,highscore)
-				elif(event.key == K_l):
-					load(players)	
-			
-				'''
-				if playery > -2 * IMAGES['player'][0].get_height():
-					playerVelY = playerFlapAcc
-					playerFlapped = True
-					#SOUNDS['wing'].play()
-				'''
-		
-		''''''
+
 		if(nn_flap(nn, f_counter, playery, playerVelY, upperPipes, lowerPipes)):
 			playerVelY = playerFlapAcc
 			playerFlapped = True
@@ -719,4 +585,7 @@ if __name__ == '__main__':
 	demo= -1
 	load_players= True
 	save_players= True
+	#highscore=5000
+	#with open('saves/highscore.pkl', 'wb') as output:
+	#	pickle.dump(highscore, output, pickle.HIGHEST_PROTOCOL)
 	main(demo,load_players,save_players)

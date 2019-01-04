@@ -2,6 +2,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+from itertools import *
 
 
 class SigmoidNeuron:
@@ -297,3 +298,47 @@ def get_performance(real, pred):
 
 
 
+
+
+selection_ratio=0.5
+mutation_rate=0.1
+
+pop_size = 15
+nn_layout = [6,10,8,6,1,]
+
+scores = []
+
+
+def fselection(players,selection_ratio):
+	mating_pool = []
+	pop_fitness = scores
+	n_parent = int(1 - pop_size * selection_ratio)
+	fittest_index = np.argsort(pop_fitness)[n_parent:][::-1]
+
+	for index in fittest_index:
+		mating_pool.append(players[index])
+	return mating_pool
+
+
+def fmutation(children, mutation_rate):
+	offspring = []
+	for child in children:
+		offspring.append(child.mutate(mutation_rate))
+	return offspring
+
+
+
+def fcross_over(mating_pool):
+	children = []
+	for comb in list(combinations(mating_pool, 2)):
+		children.append(comb[0].cross_over(comb[1]))
+		#children.append(nn_cross_over(comb[0],comb[1]))
+		# print(comb[0].cross_over(comb[1]).get_ans())
+
+	while (children.__len__() < pop_size):
+		rand_parent0 = mating_pool[np.random.randint(0, mating_pool.__len__())]
+		rand_parent1 = mating_pool[np.random.randint(0, mating_pool.__len__())]
+		#children.append(nn_cross_over(rand_parent0,rand_parent1))
+		children.append(rand_parent0.cross_over(rand_parent1))
+
+	return children[:pop_size]
